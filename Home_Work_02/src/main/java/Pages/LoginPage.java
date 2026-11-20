@@ -6,6 +6,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.net.URI;
+
 public class LoginPage extends BasePage {
     private final HeaderComponent header;
 
@@ -23,21 +25,42 @@ public class LoginPage extends BasePage {
         return header;
     }
 
+    /**
+     * Successful-login flow used by existing end-to-end tests.
+     */
     public MyRequestPage login(String email, String password) {
-        sendKeys(EMAIL_FIELD, email);
-        sendKeys(PASSWORD_FIELD, password);
-        click(LOGIN_BUTTON);
-
-        if (waitForUrlContains("/dashboard")) {
-            return new MyRequestPage(driver, wait);
-        } else {
-            getErrorLoginMsg();
-        }
+        enterEmail(email);
+        enterPassword(password);
+        clickLoginButton();
+        waitForUrlContains("/dashboard");
         return new MyRequestPage(driver, wait);
+    }
+
+    /**
+     * Submits credentials and waits until either login succeeds or the login error is shown.
+     */
+    public LoginPage submitLogin(String email, String password) {
+        enterEmail(email);
+        enterPassword(password);
+        clickLoginButton();
+        wait.until(d -> !getCurrentPagePath().equals("/login") || hasLoginError());
+        return this;
     }
 
     public String getErrorLoginMsg() {
         return getText(ERROR_LOGIN_MSG);
+    }
+
+    public boolean hasLoginError() {
+        return isDisplayed(ERROR_LOGIN_MSG);
+    }
+
+    public boolean isOnLoginPage() {
+        return "/login".equals(getCurrentPagePath());
+    }
+
+    public String getCurrentPagePath() {
+        return URI.create(driver.getCurrentUrl()).getPath();
     }
 
     public String getPasswordFieldType() {
